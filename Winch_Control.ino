@@ -6,6 +6,15 @@
 // - Winch unwind (up button) and rewind (down button) control
 // - Speed control for winch motor
 
+//****************Debug Macros******************************/
+#if MV_DEBUG_MODE
+  #define DEBUG_PRINT(x) Serial.print(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+#endif
+
 // External references to PWM settings from Motor_Control.ino
 extern uint32_t freq;       // PWM Frequency
 extern uint8_t resolution;  // PWM Resolution
@@ -37,10 +46,10 @@ void setupWinchControl() {
 void handleWinchControl() {
   // Handle UP button - UNWIND winch
   if((Ps3.event.analog_changed.button.up)) {
-    Serial.print("Pressing the up button: ");
+    DEBUG_PRINT("Winch UP: ");
     digitalWrite(winchPWMChannel_1, LOW);
     ledcWrite(winchPWMChannel_2, Ps3.data.analog.button.up * .8);
-    Serial.println(Ps3.data.analog.button.up, DEC);
+    DEBUG_PRINTLN(Ps3.data.analog.button.up, DEC);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.up < 1) {
@@ -51,10 +60,10 @@ void handleWinchControl() {
 
   // Handle DOWN button - REWIND winch
   if((Ps3.event.analog_changed.button.down)) {
-    Serial.print("Pressing the down button: ");
+    DEBUG_PRINT("Winch DOWN: ");
     digitalWrite(winchPWMChannel_2, LOW);
     ledcWrite(winchPWMChannel_1, Ps3.data.analog.button.down * .8);
-    Serial.println(Ps3.data.analog.button.down, DEC);
+    DEBUG_PRINTLN(Ps3.data.analog.button.down, DEC);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.down < 1) {

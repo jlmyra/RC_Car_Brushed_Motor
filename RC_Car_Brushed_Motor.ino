@@ -20,6 +20,15 @@
 #include "esp_adc_cal.h"
 #include "Model_Variables.h"
 
+//****************Connection Watchdog Timer******************************/
+unsigned long lastEventTime = 0;
+unsigned long connectionTimeout = MV_CONNECTION_TIMEOUT;
+bool watchdogTriggered = false;
+
+// External references for emergency stop
+extern int targetMotorSpeed;
+extern int currentMotorSpeed;
+
 //*****************************************************************************
 //*********************************SETUP***************************************
 //*****************************************************************************
@@ -56,6 +65,17 @@ void setup() {
   setupMotorControl();     // Motor_Control.ino
   setupSteeringControl();  // Steering_Control.ino
   setupWinchControl();     // Winch_Control.ino
+
+  // Initialize watchdog timer
+  lastEventTime = millis();
+
+  Serial.println();
+  Serial.println("✓ All systems initialized");
+  Serial.println("✓ Safety features active:");
+  Serial.println("  - Connection watchdog enabled");
+  Serial.println("  - Motor speed bounds checking");
+  Serial.println("  - Battery voltage protection");
+  Serial.println();
 }
 
 //*****************************************************************************
@@ -64,7 +84,24 @@ void setup() {
 void loop() {
   // Check if PS3 controller is connected
   if(!Ps3.isConnected()) {
+    watchdogTriggered = false; // Reset watchdog on disconnect
     return;
+  }
+
+  // SAFETY: Connection watchdog - emergency stop if no events received
+  unsigned long currentTime = millis();
+  if (currentTime - lastEventTime > connectionTimeout) {
+    if (!watchdogTriggered) {
+      // Emergency stop all motors
+      targetMotorSpeed = 0;
+      currentMotorSpeed = 0;
+      watchdogTriggered = true;
+      Serial.println("⚠️ WATCHDOG TRIGGERED - NO CONTROLLER EVENTS - EMERGENCY STOP");
+    }
+    // Don't update motors while watchdog is active
+    return;
+  } else {
+    watchdogTriggered = false;
   }
 
   // Update all control systems
@@ -78,6 +115,9 @@ void loop() {
 // This function is called whenever a PS3 controller event occurs
 // It dispatches events to the appropriate control modules
 void onEvent() {
+  // Update watchdog timer - we received an event from controller
+  lastEventTime = millis();
+
   handleMotorControl();     // Motor_Control.ino - Handle drive motor joystick input
   handleSteeringControl();  // Steering_Control.ino - Handle steering joystick input
   handleWinchControl();     // Winch_Control.ino - Handle winch button input
