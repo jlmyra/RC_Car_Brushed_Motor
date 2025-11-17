@@ -27,14 +27,13 @@ int targetMotorSpeed = 0;       // Target motor speed from joystick
 int targetDirection = LOW;      // Target motor direction (LOW=forward, HIGH=reverse)
 int currentDirection = LOW;     // Current motor direction
 
-// Ramping rates - adjust these values to control acceleration/deceleration speed
-// Higher values = faster acceleration/deceleration
-// Lower values = smoother but slower transitions
-int accelerationRate = 3;       // Speed increase per update cycle
-int decelerationRate = 5;       // Speed decrease per update cycle (usually faster than accel)
+// Ramping rates - configured in Model_Variables.h per vehicle
+// Higher values = faster/more aggressive, Lower values = smoother/gentler
+int accelerationRate = MV_accelerationRate;    // Speed increase per update cycle
+int decelerationRate = MV_decelerationRate;    // Speed decrease per update cycle (usually faster than accel)
 
 unsigned long lastRampUpdate = 0;
-unsigned long rampUpdateInterval = 10; // Update motor speed every 10ms (100 times per second)
+unsigned long rampUpdateInterval = MV_rampUpdateInterval; // Update interval in ms (default: 10ms = 100Hz)
 
 //*******************Motor Setup Function***********************
 void setupMotorControl() {
@@ -109,81 +108,58 @@ void updateMotorRamping() {
 //  |         Motion        |            Steering               |
 //  =============================================================
 
+//*******************Update Motor Speed Based on Joystick and L1 Button***********************
+// This function recalculates target speed based on current joystick position and L1 state
+void updateMotorSpeed() {
+  joystickPos = (Ps3.data.analog.stick.ly);
+  motorSpeed = map(joystickPos, -128, 128, -256, 256);
+
+  // Determine speed multiplier based on L1 button (nitro/turbo)
+  float speedMultiplier = Ps3.data.button.l1 ? nitroSpeed : normalSpeed;
+
+  //***FORWARD***
+  if(joystickPos < -2) {
+    motorSpeed = -motorSpeed; // Change sign of motorSpeed
+    targetDirection = LOW; // Cytron MD-13S DIR pin LOW for forward
+    targetMotorSpeed = (motorSpeed * speedMultiplier);
+
+    Serial.print("FORWARD ");
+    Serial.print(Ps3.data.button.l1 ? "NITRO: " : "NORMAL: ");
+    Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
+    Serial.print("  joystickPos="); Serial.println(joystickPos);
+  }
+  //***REVERSE***
+  else if(joystickPos > 2) {
+    targetDirection = HIGH; // Cytron MD-13S DIR pin HIGH to reverse motor direction
+    targetMotorSpeed = (motorSpeed * speedMultiplier);
+
+    Serial.print("REVERSE ");
+    Serial.print(Ps3.data.button.l1 ? "NITRO: " : "NORMAL: ");
+    Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
+    Serial.print("  joystickPos="); Serial.println(joystickPos);
+  }
+  //***STOP***
+  else if(joystickPos > -2 && joystickPos < 2) {
+    motorSpeed = 0;
+    targetMotorSpeed = 0; // Smoothly decelerate to zero
+
+    Serial.print("STOP:  targetSpeed="); Serial.print(targetMotorSpeed);
+    Serial.print("  joystickPos="); Serial.println(joystickPos);
+  }
+}
+
 void handleMotorControl() {
-  // Read the left joystick
+  // Update motor speed when joystick changes
   if((abs(Ps3.event.analog_changed.stick.ly) > 2)) {
-    joystickPos = (Ps3.data.analog.stick.ly);
-    motorSpeed = map(joystickPos, -128, 128, -256, 256);
-    motorSpeedSlow = map(joystickPos, -128, 128, -256, 256);
+    updateMotorSpeed();
+  }
 
-    //***FORWARD***
-    if(joystickPos < -2) {
-      motorSpeed = -motorSpeed; //change sign of motorSpeed
-
-      if(Ps3.data.button.l1) { //*****NITRO****** - from pushing L1 button
-        targetDirection = LOW; //Cytron MD-13S DIR pin LOW for forward
-        targetMotorSpeed = (motorSpeed * nitroSpeed); //increase the motor speed by nitroSpeed
-
-        Serial.print("Moved the left stick FORWARD NITRO:");
-        Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
-        Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
-        Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
-        Serial.print("  joystickPos="); Serial.print(joystickPos);
-        Serial.println();
-      }
-
-      if(!Ps3.data.button.l1) { //*****NORMAL SPEED***** - L1 not pushed
-        targetDirection = LOW; //Cytron MD-13S DIR pin LOW for forward
-        targetMotorSpeed = (motorSpeed * normalSpeed); //reduce the motor speed by normalSpeed
-
-        Serial.print("Moved the left stick FORWARD NORMAL:");
-        Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
-        Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
-        Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
-        Serial.print("  joystickPos="); Serial.print(joystickPos);
-        Serial.println();
-      }
-    }
-
-    //***REVERSE*** - motorSpeed is greater than 0
-    else if(joystickPos > 2) {
-      if(Ps3.data.button.l1) { //******NITRO********* - L1 Depressed
-        targetDirection = HIGH; //Cytron MD-13S DIR pin HIGH to reverse motor direction
-        targetMotorSpeed = (motorSpeed * nitroSpeed); //increase the motor speed by nitroSpeed
-
-        Serial.print("Moved the left stick REVERSE NITRO:");
-        Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
-        Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
-        Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
-        Serial.print("  joystickPos="); Serial.print(joystickPos);
-        Serial.println();
-      }
-
-      if(!Ps3.data.button.l1) { //*******NORMAL SPEED********* - L1 not pushed
-        targetDirection = HIGH; //Cytron MD-13S DIR pin HIGH to reverse motor direction
-        targetMotorSpeed = (motorSpeed * normalSpeed); //reduce the motor speed by normalSpeed
-
-        Serial.print("Moved the left stick REVERSE NORMAL:");
-        Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
-        Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
-        Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
-        Serial.print("  joystickPos="); Serial.print(joystickPos);
-        Serial.println();
-      }
-    }
-
-    //***STOP***
-    if(joystickPos > -2 && joystickPos < 2) {
-      motorSpeed = 0;
-      targetMotorSpeed = 0; // Smoothly decelerate to zero
-
-      Serial.print("Moved the left stick STOP:");
-      Serial.print(" x="); Serial.print(Ps3.data.analog.stick.lx, DEC);
-      Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ly, DEC);
-      Serial.print("  targetSpeed="); Serial.print(targetMotorSpeed);
-      Serial.print("  joystickPos="); Serial.print(joystickPos);
-      Serial.println();
-    }
+  // IMPORTANT: Update motor speed when L1 button is pressed or released
+  // This allows turbo/nitro mode to engage at ANY speed, not just from stop
+  if(Ps3.event.button_down.l1 || Ps3.event.button_up.l1) {
+    Serial.print("L1 button ");
+    Serial.println(Ps3.data.button.l1 ? "PRESSED - NITRO MODE ENGAGED" : "RELEASED - NORMAL MODE");
+    updateMotorSpeed(); // Recalculate speed with new multiplier
   }
 }
 
