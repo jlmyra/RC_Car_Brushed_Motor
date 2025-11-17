@@ -5,8 +5,7 @@
 // - Steering servo pin definitions and variables
 // - Servo setup and calibration
 // - Right joystick control for steering
-
-#include <ESP32Servo.h>  //Changed line 96 espservo.h to 2 servos max leaving channels 2-16 available for motors
+// Note: ESP32Servo.h is included in main file
 
 //****************Steering Servo Variables******************************/
 Servo steerServo;  // Create servo object to control a servo

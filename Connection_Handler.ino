@@ -20,24 +20,10 @@ void onConnection() {
 }
 
 //*******************PS3 Controller Disconnect Handler***********************
-// This function is called when the controller disconnects
-// It ensures all motors are safely stopped
-void onDisconnect() {
-  Serial.println();
-  Serial.println("**********************************");
-  Serial.println("*** PS3 Controller Disconnected ***");
-  Serial.println("**********************************");
-  Serial.println();
-
-  // Safety: Stop all motors immediately
-  targetMotorSpeed = 0;
-  currentMotorSpeed = 0;
-  digitalWrite(driveMotorDirection, LOW);
-  ledcWrite(driveMotorChannel, 0);
-
-  // Stop winch motors
-  digitalWrite(winchPWMChannel_1, LOW);
-  digitalWrite(winchPWMChannel_2, LOW);
-}
+// Note: Safety shutdown on disconnect is handled in the main loop
+// by checking Ps3.isConnected() which returns false when disconnected
+// This causes the loop to return early, and the motor ramping naturally
+// stops updating. For immediate stop on disconnect, consider using
+// Ps3.attachOnDisconnect() in the future.
 
 //*********************END Connection Handler Module*********************
