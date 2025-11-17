@@ -27,14 +27,13 @@ int targetMotorSpeed = 0;       // Target motor speed from joystick
 int targetDirection = LOW;      // Target motor direction (LOW=forward, HIGH=reverse)
 int currentDirection = LOW;     // Current motor direction
 
-// Ramping rates - adjust these values to control acceleration/deceleration speed
-// Higher values = faster acceleration/deceleration
-// Lower values = smoother but slower transitions
-int accelerationRate = 3;       // Speed increase per update cycle
-int decelerationRate = 5;       // Speed decrease per update cycle (usually faster than accel)
+// Ramping rates - configured in Model_Variables.h per vehicle
+// Higher values = faster/more aggressive, Lower values = smoother/gentler
+int accelerationRate = MV_accelerationRate;    // Speed increase per update cycle
+int decelerationRate = MV_decelerationRate;    // Speed decrease per update cycle (usually faster than accel)
 
 unsigned long lastRampUpdate = 0;
-unsigned long rampUpdateInterval = 10; // Update motor speed every 10ms (100 times per second)
+unsigned long rampUpdateInterval = MV_rampUpdateInterval; // Update interval in ms (default: 10ms = 100Hz)
 
 //*******************Motor Setup Function***********************
 void setupMotorControl() {
