@@ -6,6 +6,7 @@
 // - Voltage averaging (500 samples/second)
 // - Battery status display on PS3 controller LEDs
 // - Low battery warning with controller rumble
+// - Low voltage power limiting for battery protection
 //
 // The max voltage of the ESP32 ADC at the analogSetPinAttenuation() of 11db setting is 3.3V (see void setup()).
 // The ESP32 ADC is non-linear from about 2.6V to 3.3V. A voltage divider is needed to drop the battery voltage
@@ -24,6 +25,15 @@
 // correction.
 // This sketch follows the description here:
 // https://deepbluembedded.com/esp32-adc-tutorial-read-analog-voltage-arduino/ for more detail
+
+//****************Debug Macros******************************/
+#if MV_DEBUG_MODE
+  #define DEBUG_PRINT(x) Serial.print(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+#endif
 
 //****************Battery Monitor Variables******************************/
 int batStatusLED = 0; // Variable to hold rover battery status on controller
@@ -50,6 +60,10 @@ unsigned long interval = 2; // Millis between read A0
 
 int rumbleCounter = 0;
 
+// Battery protection
+float lowVoltageCutoff = MV_LOW_VOLTAGE_CUTOFF;
+float batteryPowerMultiplier = 1.0; // Used to limit motor power when battery is low
+
 //*******************Battery Monitor Setup Function***********************
 void setupBatteryMonitor() {
   pinMode(batPin, INPUT);
@@ -74,12 +88,20 @@ void setupBatteryMonitor() {
   }
 
   if (analogReadCounter == 500){
-    //Serial.print("analogReadCounter= "); Serial.println(analogReadCounter);
     batteryVoltageAvg = batteryVoltageSum / 500; //Compute the Average
     batteryVoltageCorr = (batteryVoltageAvg ) * mSlope; //Correct the ADC reading to Actual Battery Voltage
-                                                     
-    Serial.print ("batteryVoltageAvg= "); Serial.print (batteryVoltageAvg); Serial.print("\t"); Serial.print("batteryVoltageCorr= "); 
-    Serial.print (batteryVoltageCorr); Serial.print("  RumbleCounter= "); Serial.println(rumbleCounter);
+
+    DEBUG_PRINT("batteryVoltageAvg= "); DEBUG_PRINT(batteryVoltageAvg); DEBUG_PRINT("\t");
+    DEBUG_PRINT("batteryVoltageCorr= "); DEBUG_PRINT(batteryVoltageCorr);
+    DEBUG_PRINT("  RumbleCounter= "); DEBUG_PRINTLN(rumbleCounter);
+
+    // BATTERY PROTECTION: Limit motor power when voltage drops below cutoff
+    if (batteryVoltageCorr < lowVoltageCutoff) {
+      batteryPowerMultiplier = MV_LOW_VOLTAGE_POWER_LIMIT; // Reduce power to protect battery
+      DEBUG_PRINTLN("⚠️ LOW VOLTAGE - POWER LIMITED");
+    } else {
+      batteryPowerMultiplier = 1.0; // Full power available
+    }
 
     batteryVoltageSum = 0;
     analogReadCounter = 0;
