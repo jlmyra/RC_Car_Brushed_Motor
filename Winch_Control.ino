@@ -6,6 +6,10 @@
 // - Winch unwind (up button) and rewind (down button) control
 // - Speed control for winch motor
 
+// External references to PWM settings from Motor_Control.ino
+extern uint32_t freq;       // PWM Frequency
+extern uint8_t resolution;  // PWM Resolution
+
 //****************Winch Motor PWM Pin Definitions******************************/
 uint8_t winchPWMChannel_1 = 4;
 uint8_t winchPWMChannel_2 = 2;
