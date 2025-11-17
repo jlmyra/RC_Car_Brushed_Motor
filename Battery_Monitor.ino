@@ -1,21 +1,62 @@
-//*************************Compute Battery Voltage function***********************
-  // The max voltage of the ESP32 ADC at the analogSetPinAttenuation() of 11db setting is 3.3V (see void setup()). 
-  // The ESP32 ADC is non-linear from about 2.6V to 3.3V. A voltage divider is needed to drop the battery voltage
-  // from 8.4V (fully charged) to ~ 2.5V where the ADC becomes linear (but noisy). To smooth out the noise the 
-  // sketch reads the battery voltage every 2ms, 500 times and computes an average. In other words every second 
-  // a new voltage measurement is computed~.The voltage divider uses an R1 of 68k ohms and R2 of ~29,500 ohms. 
-  // A 0.1uf capacitor should be connected across Vout and ground to reduce noise.
-  // The ESP32 can communicate the status of the battery charge to the PS3 controller by using 
-  // the 4 connection leds. LED 4 is full charge, LED 3 is 3/4. LED 2 is 50%. LED 1 means it time to recharge
-  // the battery.
-  // Full charge is ~8.4V Should not use the battery below 6.7V (80% of 8.4V or 3.2V/cell*2 cells)
-  // The ESP32 comes with an embedded ADC calibration curve. This curve is called with this function-
-  // readADC_Cal(int ADC_Raw) and it corrects the adc voltage reading accordingly. The computeBatteryVoltage
-  // function 
-  // see - DeepBlueEmbedded describes a method for using the ESP32 internal reference voltage calibration and 
-  // correction.
-  // This sketch follows the description here:
-  // https://deepbluembedded.com/esp32-adc-tutorial-read-analog-voltage-arduino/ for more detail
+//*****************************************************************************
+//****************************BATTERY MONITOR**********************************
+//*****************************************************************************
+// This module handles battery voltage monitoring and status display including:
+// - ADC voltage reading with calibration
+// - Voltage averaging (500 samples/second)
+// - Battery status display on PS3 controller LEDs
+// - Low battery warning with controller rumble
+//
+// The max voltage of the ESP32 ADC at the analogSetPinAttenuation() of 11db setting is 3.3V (see void setup()).
+// The ESP32 ADC is non-linear from about 2.6V to 3.3V. A voltage divider is needed to drop the battery voltage
+// from 8.4V (fully charged) to ~ 2.5V where the ADC becomes linear (but noisy). To smooth out the noise the
+// sketch reads the battery voltage every 2ms, 500 times and computes an average. In other words every second
+// a new voltage measurement is computed~.The voltage divider uses an R1 of 68k ohms and R2 of ~29,500 ohms.
+// A 0.1uf capacitor should be connected across Vout and ground to reduce noise.
+// The ESP32 can communicate the status of the battery charge to the PS3 controller by using
+// the 4 connection leds. LED 4 is full charge, LED 3 is 3/4. LED 2 is 50%. LED 1 means it time to recharge
+// the battery.
+// Full charge is ~8.4V Should not use the battery below 6.7V (80% of 8.4V or 3.2V/cell*2 cells)
+// The ESP32 comes with an embedded ADC calibration curve. This curve is called with this function-
+// readADC_Cal(int ADC_Raw) and it corrects the adc voltage reading accordingly. The computeBatteryVoltage
+// function
+// see - DeepBlueEmbedded describes a method for using the ESP32 internal reference voltage calibration and
+// correction.
+// This sketch follows the description here:
+// https://deepbluembedded.com/esp32-adc-tutorial-read-analog-voltage-arduino/ for more detail
+
+//****************Battery Monitor Variables******************************/
+int batStatusLED = 0; // Variable to hold rover battery status on controller
+
+// Battery Voltage Corrections
+int R1 = MV_R1;
+int R2 = MV_R2;
+
+float vOutMax = 8.4 * R2 / (R1 + R2); // Calculate output of voltage divider with fully charged batteries
+float mSlope = 1 / (vOutMax / 8.4); // Calculate slope of voltage correction curve
+
+float adcRead = 0;
+float batteryVoltage = 0; // Computed battery voltage
+float batteryVoltageSum = 0;
+float batteryVoltageAvg = 0;
+float batteryVoltageCorr = 0;
+float batCorrFactor = MV_batCorrFactor;
+
+unsigned long analogReadCounter = 0;
+
+const int batPin = 32; // GPIO32 - ADC1_CH4
+unsigned long previousMillis = 0; // For timer reading A0
+unsigned long interval = 2; // Millis between read A0
+
+int rumbleCounter = 0;
+
+//*******************Battery Monitor Setup Function***********************
+void setupBatteryMonitor() {
+  pinMode(batPin, INPUT);
+  analogSetPinAttenuation(batPin, ADC_0db);
+}
+
+//*******************Compute Battery Voltage Function***********************
 
   void computeBatteryVoltage(){
     
