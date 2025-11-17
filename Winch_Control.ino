@@ -49,7 +49,7 @@ void handleWinchControl() {
     DEBUG_PRINT("Winch UP: ");
     digitalWrite(winchPWMChannel_1, LOW);
     ledcWrite(winchPWMChannel_2, Ps3.data.analog.button.up * .8);
-    DEBUG_PRINTLN(Ps3.data.analog.button.up, DEC);
+    DEBUG_PRINTLN(Ps3.data.analog.button.up);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.up < 1) {
@@ -63,7 +63,7 @@ void handleWinchControl() {
     DEBUG_PRINT("Winch DOWN: ");
     digitalWrite(winchPWMChannel_2, LOW);
     ledcWrite(winchPWMChannel_1, Ps3.data.analog.button.down * .8);
-    DEBUG_PRINTLN(Ps3.data.analog.button.down, DEC);
+    DEBUG_PRINTLN(Ps3.data.analog.button.down);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.down < 1) {
