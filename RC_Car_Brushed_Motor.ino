@@ -20,6 +20,18 @@
 #include "esp_adc_cal.h"
 #include "Model_Variables.h"
 
+//****************Forward Declarations (for functions in other .ino files)******************************/
+void setupBatteryMonitor();
+void computeBatteryVoltage();
+void setupMotorControl();
+void updateMotorRamping();
+void handleMotorControl();
+void setupSteeringControl();
+void handleSteeringControl();
+void setupWinchControl();
+void handleWinchControl();
+void onConnection();
+
 //****************Connection Watchdog Timer******************************/
 unsigned long lastEventTime = 0;
 unsigned long connectionTimeout = MV_CONNECTION_TIMEOUT;
