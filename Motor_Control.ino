@@ -173,7 +173,7 @@ void updateMotorSpeed() {
   float speedMultiplier = Ps3.data.button.l1 ? nitroSpeed : normalSpeed;
 
   //***FORWARD***
-  if(joystickPos < -MV_JOYSTICK_DEADZONE) {
+  if (joystickPos < -MV_JOYSTICK_DEADZONE) {
     motorSpeed = -motorSpeed; // Change sign of motorSpeed
     targetDirection = LOW; // Cytron MD-13S DIR pin LOW for forward
     targetMotorSpeed = constrain((int)(motorSpeed * speedMultiplier), 0, 255);
@@ -184,7 +184,7 @@ void updateMotorSpeed() {
     DEBUG_PRINT("  joystickPos="); DEBUG_PRINTLN(joystickPos);
   }
   //***REVERSE***
-  else if(joystickPos > MV_JOYSTICK_DEADZONE) {
+  else if (joystickPos > MV_JOYSTICK_DEADZONE) {
     targetDirection = HIGH; // Cytron MD-13S DIR pin HIGH to reverse motor direction
     targetMotorSpeed = constrain((int)(motorSpeed * speedMultiplier), 0, 255);
 
@@ -194,7 +194,7 @@ void updateMotorSpeed() {
     DEBUG_PRINT("  joystickPos="); DEBUG_PRINTLN(joystickPos);
   }
   //***STOP***
-  else if(joystickPos > -MV_JOYSTICK_DEADZONE && joystickPos < MV_JOYSTICK_DEADZONE) {
+  else if (joystickPos > -MV_JOYSTICK_DEADZONE && joystickPos < MV_JOYSTICK_DEADZONE) {
     motorSpeed = 0;
     targetMotorSpeed = 0; // Smoothly decelerate to zero
 
@@ -205,7 +205,7 @@ void updateMotorSpeed() {
 
 void handleMotorControl() {
   // Update motor speed when joystick changes
-  if((abs(Ps3.event.analog_changed.stick.ly) > MV_JOYSTICK_DEADZONE)) {
+  if ((abs(Ps3.event.analog_changed.stick.ly) > MV_JOYSTICK_DEADZONE)) {
     updateMotorSpeed();
   }
 

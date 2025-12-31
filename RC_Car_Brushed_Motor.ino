@@ -121,8 +121,9 @@ void loop() {
       digitalWrite(winchDirection_1, LOW);
       digitalWrite(winchDirection_2, LOW);
       Serial.println("⚠️ CONTROLLER DISCONNECTED - EMERGENCY STOP");
+      watchdogTriggered = true;
     }
-    watchdogTriggered = false; // Reset watchdog on disconnect
+
     return;
   }
 

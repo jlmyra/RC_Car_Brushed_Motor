@@ -76,7 +76,7 @@ void setupSteeringControl() {
 
 void handleSteeringControl() {
   // Handle right joystick movement for steering (both positive and negative values)
-  if(abs(Ps3.event.analog_changed.stick.rx) > MV_JOYSTICK_DEADZONE) {
+  if (abs(Ps3.event.analog_changed.stick.rx) > MV_JOYSTICK_DEADZONE) {
     int x_position = Ps3.data.analog.stick.rx;   // Uses joystick x position for steering left/right
 
     // Apply exponential curve to steering input for better precision

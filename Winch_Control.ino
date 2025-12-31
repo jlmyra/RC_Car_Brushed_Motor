@@ -45,30 +45,36 @@ void setupWinchControl() {
 
 void handleWinchControl() {
   // Handle UP button - UNWIND winch
-  if((Ps3.event.analog_changed.button.up)) {
+  if ((Ps3.event.analog_changed.button.up)) {
     DEBUG_PRINT("Winch UP: ");
+    // Set direction pins and write PWM to channel 1
     digitalWrite(winchDirection_1, LOW);
-    ledcWrite(winchDirection_2, Ps3.data.analog.button.up * MV_WINCH_SPEED_FACTOR);
+    digitalWrite(winchDirection_2, LOW);
+    ledcWrite(winchPWMChannel_1, constrain((int)(Ps3.data.analog.button.up * MV_WINCH_SPEED_FACTOR), 0, 255));
     DEBUG_PRINTLN(Ps3.data.analog.button.up);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.up < 1) {
       digitalWrite(winchDirection_1, LOW);
       digitalWrite(winchDirection_2, LOW);
+      ledcWrite(winchPWMChannel_1, 0);
     }
   }
 
   // Handle DOWN button - REWIND winch
-  if((Ps3.event.analog_changed.button.down)) {
+  if ((Ps3.event.analog_changed.button.down)) {
     DEBUG_PRINT("Winch DOWN: ");
+    // Set direction pins and write PWM to channel 2
+    digitalWrite(winchDirection_1, LOW);
     digitalWrite(winchDirection_2, LOW);
-    ledcWrite(winchDirection_1, Ps3.data.analog.button.down * MV_WINCH_SPEED_FACTOR);
+    ledcWrite(winchPWMChannel_2, constrain((int)(Ps3.data.analog.button.down * MV_WINCH_SPEED_FACTOR), 0, 255));
     DEBUG_PRINTLN(Ps3.data.analog.button.down);
 
     // Stop winch when button released
     if (Ps3.data.analog.button.down < 1) {
       digitalWrite(winchDirection_1, LOW);
       digitalWrite(winchDirection_2, LOW);
+      ledcWrite(winchPWMChannel_2, 0);
     }
   }
 }
