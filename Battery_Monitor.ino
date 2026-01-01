@@ -67,7 +67,9 @@ float batteryPowerMultiplier = 1.0; // Used to limit motor power when battery is
 //*******************Battery Monitor Setup Function***********************
 void setupBatteryMonitor() {
   pinMode(batPin, INPUT);
-  analogSetPinAttenuation(batPin, ADC_0db);
+  // Configure ADC1 Channel 4 (GPIO32) for 11dB attenuation (0-2.45V range)
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
 }
 
 //*******************Compute Battery Voltage Function***********************
@@ -110,24 +112,20 @@ void setupBatteryMonitor() {
     Ps3.setPlayer(batStatusLED);
     batStatusLED = 10; //4 LED's
     rumbleCounter = 0;
-    batteryVoltageCorr = 0;
   }
   else if(batteryVoltageCorr <= 7.8 && batteryVoltageCorr > 7.3 ) {
     Ps3.setPlayer(batStatusLED);
     batStatusLED = 9; // 3 LEDS
-    rumbleCounter = 0; 
-    batteryVoltageCorr = 0;
+    rumbleCounter = 0;
   }
   else if(batteryVoltageCorr <= 7.3 && batteryVoltageCorr > 6.7 ) {
     Ps3.setPlayer(batStatusLED);
     batStatusLED = 7; // 2 LEDS
-    rumbleCounter = 0; 
-    batteryVoltageCorr = 0;
+    rumbleCounter = 0;
   }
     else if(batteryVoltageCorr < 6.7 ) {
     Ps3.setPlayer(batStatusLED);
     batStatusLED = 4;
-    batteryVoltageCorr = 0;
 
 //************************SET RUMBLE*************************
 // if the battery voltage drops below 6.7 volts for more than 15 seconds turn on the PS3 Rumble
@@ -159,9 +157,9 @@ void setupBatteryMonitor() {
 //***********************ADC Read Calibration Function*********************
 
    uint32_t readADC_Cal(int ADC_Raw){
-    
+
    esp_adc_cal_characteristics_t adc_chars;
-  
+
    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
    return(esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
   }

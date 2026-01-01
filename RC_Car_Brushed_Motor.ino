@@ -22,6 +22,7 @@
 #include <Ps3Controller.h>
 #include <ESP32Servo.h>
 #include "esp_adc_cal.h"
+#include "driver/adc.h"
 #include "Model_Variables.h"
 
 //****************Forward Declarations (for functions in other .ino files)******************************/
